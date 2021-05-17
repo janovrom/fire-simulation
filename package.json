@@ -1,9 +1,9 @@
 {
     "name": "janovrom.fire_simulation",
-    "version": "0.0.1-alpha",
+    "version": "0.0.1",
     "displayName": "Fire simulation",
     "description": "Prototype for fire simulation with simple color/temperature rendering.",
-    "unity": "2020",
+    "unity": "2020.1",
     "keywords": [
         "fire simulation"
     ],

@@ -1,8 +1,8 @@
-﻿using janovrom.firesimulation.Runtime.Simulation;
+﻿using Janovrom.Firesimulation.Runtime.Simulation;
 using UnityEditor;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Editor
+namespace Janovrom.Firesimulation.Editor
 {
 
     [CanEditMultipleObjects]
@@ -10,10 +10,14 @@ namespace janovrom.firesimulation.Editor
     public class FireSimulationEditor : UnityEditor.Editor
     {
 
+        public bool DrawGizmo = true;
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            var simulation = (FireSimulation)target;
+
+            DrawGizmo = EditorGUILayout.Toggle("Enable grid preview: ", DrawGizmo);
+            FireSimulationGizmoDrawer.EnableGizmo = DrawGizmo;
         }
 
     }   

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime.Simulation
+namespace Janovrom.Firesimulation.Runtime.Simulation
 {
 
     [CreateAssetMenu(fileName ="New Simulation Settings", menuName ="FireSimulation/Simulation Settings")]

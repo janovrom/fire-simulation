@@ -1,11 +1,11 @@
-﻿using janovrom.firesimulation.Runtime.PlantGenerators;
-using janovrom.firesimulation.Runtime.Plants;
-using janovrom.firesimulation.Runtime.Renderers;
+﻿using Janovrom.Firesimulation.Runtime.PlantGenerators;
+using Janovrom.Firesimulation.Runtime.Plants;
+using Janovrom.Firesimulation.Runtime.Renderers;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime.Simulation
+namespace Janovrom.Firesimulation.Runtime.Simulation
 {
     public class FireSimulation : MonoBehaviour
     {
@@ -34,6 +34,9 @@ namespace janovrom.firesimulation.Runtime.Simulation
         {
             if (PlantGenerator is null)
                 return;
+
+            _isSimulationRunning = false;
+
             Renderer.Clear();
             IList<Plant> plants = PlantGenerator.GetPlants(SimulationBounds.min, SimulationBounds.max);
             var plantToLightIdx = Random.Range(0, plants.Count);
@@ -51,8 +54,10 @@ namespace janovrom.firesimulation.Runtime.Simulation
             {
                 Renderer.Register(plant);
             }
-            _isSimulationRunning = true;
+
             InitializeGrid();
+
+            _isSimulationRunning = true;
         }
 
         private void InitializeGrid()
@@ -193,25 +198,6 @@ namespace janovrom.firesimulation.Runtime.Simulation
 
                     float dt = dy0 + dy1 + dx0 + dx1 + dy0x0 + dx1y1 + dx1y0 + dx0y1;
                     _outputGrid[x, y] = t + dt * deltaTime / 8f;
-
-                }
-            }
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.DrawWireSphere(SimulationBounds.center, 1f);
-            Gizmos.DrawWireCube(SimulationBounds.center, SimulationBounds.size);
-
-            float dx = SimulationBounds.size.x / ResolutionX;
-            float dz = SimulationBounds.size.z / ResolutionY;
-            var cellOffset = new Vector3(dx * 0.5f, SimulationBounds.size.y * 0.5f, dz * 0.5f);
-            for (int x = 0; x < ResolutionX; ++x)
-            {
-                for (int y = 0; y < ResolutionY; ++y)
-                {
-                    var center = SimulationBounds.min + cellOffset + new Vector3(x * dx, 0f, y * dz);
-                    Gizmos.DrawWireCube(center, new Vector3(dx, 10f, dz));
 
                 }
             }

@@ -1,4 +1,4 @@
-﻿using janovrom.firesimulation.Runtime.Plants;
+﻿using Janovrom.Firesimulation.Runtime.Plants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime.Renderers
+namespace Janovrom.Firesimulation.Runtime.Renderers
 {
 
     public class PlantBasicRenderer : Renderer

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime
+namespace Janovrom.Firesimulation.Runtime
 {
     [RequireComponent(typeof(Camera))]
     public class CameraMovement : MonoBehaviour

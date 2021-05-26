@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Janovrom.Firesimulation.Runtime.PlantGenerators
 {
 
-    public class GridPlantGenerator : PlantProvider
+    public class JitterPlantGenerator : PlantProvider
     {
 
         public int ResolutionX;
@@ -30,8 +30,15 @@ namespace Janovrom.Firesimulation.Runtime.PlantGenerators
                 {
                     Vector3 position = deltaX * i + deltaZ * j + min + cellCenterOffset;
                     position.y = max.y;
-                    Debug.DrawRay(position, Vector3.down * size.y, Color.red, 10f);
-                    if (Physics.Raycast(position, Vector3.down, out RaycastHit hit, 10000f, CreateOn.value))
+                    
+                    Vector2 rndCircle = Random.insideUnitCircle;
+                    float dx = rndCircle.x * deltaX.x * 0.45f;
+                    float dz = rndCircle.y * deltaZ.z * 0.45f;
+                    Vector3 jitteredPosition = position;
+                    jitteredPosition.x += dx;
+                    jitteredPosition.z += dz;
+
+                    if (Physics.Raycast(jitteredPosition, Vector3.down, out RaycastHit hit, 10000f, CreateOn.value))
                     {
                         var plant = GameObject.Instantiate(PlantPrefab, hit.point, Quaternion.identity);
                         plant.transform.SetParent(this.transform);

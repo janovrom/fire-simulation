@@ -6,13 +6,13 @@ namespace Janovrom.Firesimulation.Editor
 {
 
     [CanEditMultipleObjects]
-    [CustomEditor(typeof(GridPlantGenerator))]
-    public class GridPlantGeneratorEditor : PlantGeneratorEditorBase
+    [CustomEditor(typeof(JitterPlantGenerator))]
+    public class JitterPlantGeneratorEditor : PlantGeneratorEditorBase
     {
 
         protected override void OnInspectorGUI_Internal()
         {
-            var generator = (GridPlantGenerator)target;
+            var generator = (JitterPlantGenerator)target;
             GUILayout.Label($"Plant count: {generator.Count}");
         }
 

@@ -1,7 +1,7 @@
-﻿using janovrom.firesimulation.Runtime.Renderers;
+﻿using Janovrom.Firesimulation.Runtime.Renderers;
 using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime.Plants
+namespace Janovrom.Firesimulation.Runtime.Plants
 {
 
     public enum State

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace janovrom.firesimulation.Runtime.Plants
+namespace Janovrom.Firesimulation.Runtime.Plants
 {
     [CreateAssetMenu(fileName ="New Flammable Data", menuName ="FireSimulation/Flammable Data")]
     public class FlammableData : ScriptableObject

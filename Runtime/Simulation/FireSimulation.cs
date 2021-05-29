@@ -17,7 +17,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public float HeatTransferSpeed = 1f;
         public PlantBasicRenderer Renderer;
         public Bounds SimulationBounds;
-        public Texture2D HeatTexture;
+        [Range(0f, 100f)]
+        public float WindSpeed = 0f;
+        public Vector3 WindDirection = Vector3.right;
 
         private List<Plant> _burningPlants;
         private List<Plant> _burnedDownPlants;
@@ -29,6 +31,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         private bool _isSimulationRunning = false;
 
         private const float _FlashpointTemperature = 600f;
+        private const int _loopStart = 2;
+        private const int _padding = _loopStart * 2;
+
 
         public void StartSimulation()
         {
@@ -62,12 +67,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void InitializeGrid()
         {
-            _temperatureGrid = new float[ResolutionX + 2, ResolutionY + 2];
-            _outputGrid = new float[ResolutionX + 2, ResolutionY + 2];
+            _temperatureGrid = new float[ResolutionX + _padding, ResolutionY + _padding];
+            _outputGrid = new float[ResolutionX + _padding, ResolutionY + _padding];
             _deltaXDistance = SimulationBounds.size.x / ResolutionX;
             _deltaZDistance = SimulationBounds.size.z / ResolutionY;
             _deltaDistance = Mathf.Sqrt(_deltaXDistance * _deltaXDistance + _deltaZDistance * _deltaZDistance);
-            HeatTexture = new Texture2D(ResolutionX, ResolutionY);
         }
 
         private void Update()
@@ -78,31 +82,21 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             float simulationDeltaTime = Time.deltaTime;
             SetFireTemperatures();
             SpreadTemperature(simulationDeltaTime * HeatTransferSpeed);
-            ApplyMask();
+            ApplyWind(simulationDeltaTime * HeatTransferSpeed);
             UpdateBurningTimes(simulationDeltaTime);
             UpdateTimesBeforeFlashpoint(simulationDeltaTime);
-            SwapBuffers();
             Renderer.Render();
-            UpdateTexture();
         }
 
-        private void UpdateTexture()
+        private void CopyOutputBuffer()
         {
             for (int x = 0; x < ResolutionX; ++x)
             {
                 for (int y = 0; y < ResolutionY; ++y)
                 {
-                    float red = Mathf.Clamp01(_temperatureGrid[x + 1, y + 1] / _FlashpointTemperature);
-                    HeatTexture.SetPixel(x, y, new Color(red, 0f, 0f));
+                    _temperatureGrid[x, y] = _outputGrid[x, y];
                 }
             }
-        }
-
-        private void SwapBuffers()
-        {
-            var tmp = _outputGrid;
-            _outputGrid = _temperatureGrid;
-            _temperatureGrid = tmp;
         }
 
         private void GetIndices(Plant plant, out int x, out int y)
@@ -124,7 +118,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             int ix = (int)x;
             int iy = (int)y;
 
-            float x0 =  mixx* _outputGrid[ix + dx, iy + dy] + (1f - mixx) * _outputGrid[ix, iy + dy];
+            float x0 = mixx * _outputGrid[ix + dx, iy + dy] + (1f - mixx) * _outputGrid[ix, iy + dy];
             float x1 = mixx * _outputGrid[ix + dx, iy] + (1f - mixx) * _outputGrid[ix, iy];
 
             return mixy * x0 + (1f - mixy)  * x1;
@@ -177,13 +171,46 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
-        private void SpreadTemperature(float deltaTime)
+        private void ApplyWind(float deltaTime)
         {
+            Vector3 heatPropagation = WindDirection.normalized * WindSpeed + Vector3.up;
+            heatPropagation.Normalize();
+            int ix = (int)Mathf.Sign(heatPropagation.x) * Mathf.Abs(heatPropagation.x) > 0.707f ? 1 : 0;
+            int iz = (int)Mathf.Sign(heatPropagation.z) * Mathf.Abs(heatPropagation.z) > 0.707f ? 1 : 0;
+
+            if (ix == 0 && iz == 0)
+            {
+                return;
+            }
+
+            heatPropagation.y = 0f;
+
+            // The lower the y component was, the higher the windMultiplier.
+            // If the wind blows strongly in a direction, windMultiplier should
+            // be around 1. If there is no wind, it should be 0.
+            float windMultiplier = heatPropagation.magnitude;
+            float distanceMultiplier = 1f / Mathf.Sqrt(ix * _deltaXDistance * _deltaXDistance + iz * _deltaZDistance * _deltaZDistance);
+
             for (int x = 1; x <= ResolutionX; ++x)
             {
                 for (int y = 1; y <= ResolutionY; ++y)
                 {
-                    // Compute temperature gradient
+                    float t0 = _temperatureGrid[x, y];
+                    float t1 = _temperatureGrid[x + ix, y + iz];
+                    float dt = (t1 - t0) * deltaTime * windMultiplier * distanceMultiplier * 0.1f;
+
+                    _outputGrid[x, y] -= dt;
+                    _outputGrid[x + ix, y + iz] += dt;
+                }
+            }
+        }
+
+        private void SpreadTemperature(float deltaTime)
+        {
+            for (int x = _loopStart; x < ResolutionX - _loopStart; ++x)
+            {
+                for (int y = _loopStart; y < ResolutionY - _loopStart; ++y)
+                {
                     // Spread the temperature (convective heat transfer)
                     // Heat transfer is modified by wind and upwards heat movement
                     var t = _temperatureGrid[x, y];
@@ -191,16 +218,13 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     float dy1 = (_temperatureGrid[x, y + 1]);
                     float dx0 = (_temperatureGrid[x - 1, y]);
                     float dx1 = (_temperatureGrid[x + 1, y]);
-                    float dy0x0 = (_temperatureGrid[x - 1, y - 1]);
-                    float dx1y1 = (_temperatureGrid[x + 1, y + 1]);
-                    float dx1y0 = (_temperatureGrid[x + 1, y - 1]);
-                    float dx0y1 = (_temperatureGrid[x - 1, y + 1]);
 
-                    float dt = dy0 + dy1 + dx0 + dx1 + dy0x0 + dx1y1 + dx1y0 + dx0y1;
-                    _outputGrid[x, y] = t + dt * deltaTime / 8f;
-
+                    float dt = dy0 + dy1 + dx0 + dx1;
+                    _outputGrid[x, y] = t + dt * deltaTime / 4f;
                 }
             }
+
+            CopyOutputBuffer();
         }
 
     }

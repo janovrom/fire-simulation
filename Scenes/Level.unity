@@ -553,7 +553,7 @@ MonoBehaviour:
   Renderer: {fileID: 1177414994}
   SimulationBounds:
     m_Center: {x: 500, y: 0, z: 500}
-    m_Extent: {x: 50, y: 100, z: 50}
+    m_Extent: {x: 200, y: 100, z: 200}
   WindSpeed: 0
   WindDirection: {x: 1, y: 0, z: 0}
 --- !u!4 &1177414996
@@ -582,8 +582,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f35a291dca19e94d9d7a2cb43b7ad23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ResolutionX: 20
-  ResolutionZ: 20
+  ResolutionX: 100
+  ResolutionZ: 100
   CreateOn:
     serializedVersion: 2
     m_Bits: 256

@@ -83,7 +83,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
             float simulationDeltaTime = Time.deltaTime;
             SetFireTemperatures();
-            SpreadTemperature(simulationDeltaTime * HeatTransferSpeed);
+            FireSourceRadiation(simulationDeltaTime * HeatTransferSpeed);
             ApplyWind(simulationDeltaTime * HeatTransferSpeed);
             UpdateBurningTimes(simulationDeltaTime);
             UpdateTimesBeforeFlashpoint(simulationDeltaTime);
@@ -111,23 +111,26 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private float GetLocalTemperature(Plant plant)
         {
-            GetIndices(plant, out int x, out int y);
-            return _outputGrid[x, y];
+            //GetIndices(plant, out int x, out int y);
+            //return _outputGrid[x, y];
 
-            //Vector3 delta = (plant.transform.position - SimulationBounds.min);
-            //float x = (delta.x / SimulationBounds.size.x * ResolutionX) + 1;
-            //float y = (delta.z / SimulationBounds.size.z * ResolutionY) + 1;
-            //float mixx = x % 1f;
-            //float mixy = y % 1f;
-            //int dx = mixx + 0.5f > 1f ? 1 : -1;
-            //int dy = mixy + 0.5f > 1f ? 1 : -1;
-            //int ix = (int)x;
-            //int iy = (int)y;
+            Vector3 delta = (plant.transform.position - SimulationBounds.min);
+            float x = (delta.x / SimulationBounds.size.x * ResolutionX) + 1;
+            float y = (delta.z / SimulationBounds.size.z * ResolutionY) + 1;
+            // If the fraction is larger than 0.5 than we should keep this as 
+            // the origin, otherwise shift back.
+            x -= 0.5f;
+            y -= 0.5f;
 
-            //float x0 = mixx * _outputGrid[ix + dx, iy + dy] + (1f - mixx) * _outputGrid[ix, iy + dy];
-            //float x1 = mixx * _outputGrid[ix + dx, iy] + (1f - mixx) * _outputGrid[ix, iy];
+            float mixx = x % 1f;
+            float mixy = y % 1f;
+            int ix = (int)x;
+            int iy = (int)y;
 
-            //return mixy * x0 + (1f - mixy)  * x1;
+            float x0 = mixx * _outputGrid[ix + 1, iy] + (1f - mixx) * _outputGrid[ix, iy];
+            float x1 = mixx * _outputGrid[ix + 1, iy + 1] + (1f - mixx) * _outputGrid[ix, iy + 1];
+
+            return mixy * x0 + (1f - mixy) * x1;
         }
 
         private void UpdateTimesBeforeFlashpoint(float simulationDeltaTime)
@@ -205,6 +208,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
             if (ix == 0 && iz == 0)
             {
+                // When there is no wind or the wind is not strong enough, we can 
+                // assume that the heat propagates upwards. Which should create
+                // air currents from the ground up slowly cooling down the area.
                 Dissipate(deltaTime);
                 return;
             }
@@ -229,50 +235,31 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     // from x,y to x+ix, y + iy.
                     dt = Mathf.Abs(dt);
                     _outputGrid[x, y] -= dt;
-                    //_outputGrid[x, y] = Mathf.Max(0f, _outputGrid[x, y]);
                     _outputGrid[x + ix, y + iz] += dt;
                 }
             }
         }
 
-        private void SpreadTemperature(float deltaTime)
+        private void FireSourceRadiation(float deltaTime)
         {
             for (int x = _loopStart; x < ResolutionX + _loopStart; ++x)
             {
                 for (int y = _loopStart; y < ResolutionY + _loopStart; ++y)
                 {
-                    // Spread the temperature (convective heat transfer)
-                    // Heat transfer is modified by wind and upwards heat movement
                     var t = _fireSourceGrid[x, y];
 
-                    //if (t >= 1200f) // fire source
-                    //{
-                    //    _outputGrid[x, y] = t;
-                    //    continue;
-                    //}
-
-                    //float gradx = _temperatureGrid[x + 1, y] - _temperatureGrid[x - 1, y];
-                    //float grady = _temperatureGrid[x, y + 1] - _temperatureGrid[x, y - 1];
-
-                    //int ix = -(int)Mathf.Sign(gradx) * (Mathf.Abs(gradx) > 0.0f ? 1 : 0);
-                    //int iz = -(int)Mathf.Sign(grady) * (Mathf.Abs(grady) > 0.0f ? 1 : 0);
-                    //if (ix == 0 && iz == 0)
-                    //{
-                        // Negative values when t is larger. That means we should propagate
-                        // to lower.
-
-
-                        float dy0 = (_fireSourceGrid[x, y - 1] - t) * deltaTime / _deltaZDistance;
-                        float dy1 = (_fireSourceGrid[x, y + 1] - t) * deltaTime / _deltaZDistance;
-                        float dx0 = (_fireSourceGrid[x - 1, y] - t) * deltaTime / _deltaXDistance;
-                        float dx1 = (_fireSourceGrid[x + 1, y] - t) * deltaTime / _deltaXDistance;
+                    float dy0 = (_fireSourceGrid[x, y - 1] - t) * deltaTime / _deltaZDistance;
+                    float dy1 = (_fireSourceGrid[x, y + 1] - t) * deltaTime / _deltaZDistance;
+                    float dx0 = (_fireSourceGrid[x - 1, y] - t) * deltaTime / _deltaXDistance;
+                    float dx1 = (_fireSourceGrid[x + 1, y] - t) * deltaTime / _deltaXDistance;
 
                     float dx0y0 = (_fireSourceGrid[x - 1, y - 1] - t) * deltaTime / _deltaDistance;
                     float dx0y1 = (_fireSourceGrid[x - 1, y + 1] - t) * deltaTime / _deltaDistance;
                     float dx1y0 = (_fireSourceGrid[x + 1, y - 1] - t) * deltaTime / _deltaDistance;
                     float dx1y1 = (_fireSourceGrid[x + 1, y + 1] - t) * deltaTime / _deltaDistance;
 
-                    // When negative, we should add.
+                    // When d* is negative, we should add as it means, that [x,y] has higher
+                    // temperature and we should propagate from higher to lower temperature.
                     _outputGrid[x, y - 1] -= dy0;
                     _outputGrid[x, y + 1] -= dy1;
                     _outputGrid[x - 1, y] -= dx0;
@@ -282,21 +269,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     _outputGrid[x - 1, y + 1] -= dx0y1;
                     _outputGrid[x + 1, y - 1] -= dx1y0;
                     _outputGrid[x + 1, y + 1] -= dx1y1;
-                        //_outputGrid[x, y] = t + dy0 + dy1 + dx0 + dx1;
-                    //    continue;
-                    //}
-
-                    //float t0 = _temperatureGrid[x, y];
-                    //float distanceMultiplier = 1f / Mathf.Sqrt(ix * ix * _deltaXDistance * _deltaXDistance + iz * iz * _deltaZDistance * _deltaZDistance);
-                    //float t1 = _temperatureGrid[x + ix, y + iz];
-                    //float dt = (t1 - t0) * deltaTime * distanceMultiplier;
-
-                    //_outputGrid[x, y] -= dt;
-                    //_outputGrid[x + ix, y + iz] += dt;
                 }
             }
-
-            //CopyOutputBuffer();
         }
 
     }

@@ -115,12 +115,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             //return _outputGrid[x, y];
 
             Vector3 delta = (plant.transform.position - SimulationBounds.min);
+            // x,y correspond to the bottom corner of the grid cell
             float x = (delta.x / SimulationBounds.size.x * ResolutionX) + 1;
             float y = (delta.z / SimulationBounds.size.z * ResolutionY) + 1;
-            // If the fraction is larger than 0.5 than we should keep this as 
-            // the origin, otherwise shift back.
-            x -= 0.5f;
-            y -= 0.5f;
 
             float mixx = x % 1f;
             float mixy = y % 1f;
@@ -130,7 +127,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             float x0 = mixx * _outputGrid[ix + 1, iy] + (1f - mixx) * _outputGrid[ix, iy];
             float x1 = mixx * _outputGrid[ix + 1, iy + 1] + (1f - mixx) * _outputGrid[ix, iy + 1];
 
-            return mixy * x0 + (1f - mixy) * x1;
+            return mixy * x1 + (1f - mixy) * x0;
         }
 
         private void UpdateTimesBeforeFlashpoint(float simulationDeltaTime)

@@ -1,4 +1,4 @@
-﻿using Janovrom.Firesimulation.Runtime.Renderers;
+﻿using System;
 using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Plants
@@ -14,9 +14,11 @@ namespace Janovrom.Firesimulation.Runtime.Plants
     public class Plant : MonoBehaviour
     {
 
-        public FlammableData Data;
+        public float BurnTime = 20f;
         [HideInInspector]
         public float TimeOnFire = 0f;
+
         public State State = State.Normal;
+
     }
 }

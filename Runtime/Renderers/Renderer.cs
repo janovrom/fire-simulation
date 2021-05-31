@@ -34,6 +34,8 @@ namespace Janovrom.Firesimulation.Runtime.Renderers
             OnRenderableRemoved(renderable);
         }
 
+        public abstract void NotifyStateChange(Plant plant);
+
         protected virtual void OnRenderableAdded(Plant renderable)
         {
         }

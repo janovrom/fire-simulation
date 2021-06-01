@@ -38,22 +38,45 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         private const int _padding = _loopStart * 2;
 
 
-        public void StartSimulation()
+        public void ClearPlants()
+        {
+            PauseSimulation();
+            Renderer?.Clear();
+            PlantGenerator?.Clear();
+            _plantList = null;
+        }
+
+        public void GeneratePlants()
         {
             if (PlantGenerator is null)
                 return;
 
-            _isSimulationRunning = false;
+            PauseSimulation();
+            ClearPlants();
 
-            Renderer.Clear();
             _plantList = new PlantList(PlantGenerator.GetPlants(SimulationBounds.min, SimulationBounds.max));
             var plantToLightIdx = UnityEngine.Random.Range(0, _plantList.Count);
+
             _plantList.LightPlant(plantToLightIdx);
 
             foreach (var plant in _plantList)
             {
                 Renderer.Register(plant);
             }
+        }
+
+        public void PauseSimulation()
+        {
+            _isSimulationRunning = false;
+        }
+
+        public void StartSimulation()
+        {
+            if (PlantGenerator is null)
+                return;
+
+            if (_plantList is null)
+                GeneratePlants();
 
             InitializeGrid();
             CacheIndices();

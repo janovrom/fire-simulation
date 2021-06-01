@@ -550,7 +550,7 @@ MonoBehaviour:
   Renderer: {fileID: 1177414994}
   ResolutionX: 64
   ResolutionY: 64
-  HeatTransferSpeed: 0.284
+  HeatTransferSpeed: 0.673
   WindSpeed: 34.6
   WindDirection: {x: 1, y: 0, z: 0}
   SimulationBounds:

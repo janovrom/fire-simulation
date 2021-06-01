@@ -41,12 +41,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 plant.State = State.Burned;
                 // Make it last burning plant
-                this[index] = this[BurningPlantsCount];
+                this[index] = this[BurningPlantsCount - 1];
                 // Here should be assignment this[BurningPlantsCount] = plant but let's skip it
                 // Shift last normal to last burning
-                Plant lastNormalPlant = this[ActivePlantsStart + ActivePlantsCount - 1];
-                this[BurningPlantsCount] = lastNormalPlant;
-                this[ActivePlantsStart + ActivePlantsCount - 1] = plant;
+                Plant lastNormalPlant = this[ActivePlantsEnd];
+                this[BurningPlantsCount - 1] = lastNormalPlant;
+                this[ActivePlantsEnd] = plant;
                 BurningPlantsCount -= 1;
             }
         }

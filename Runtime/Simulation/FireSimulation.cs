@@ -29,6 +29,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         private float[,] _heatTransferGrid;
 
         private float _deltaXDistance, _deltaZDistance, _deltaDistance;
+        private Vector3 _min;
         private bool _isSimulationRunning = false;
 
         private const float _FireTemperature = 1200f;
@@ -55,6 +56,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
 
             InitializeGrid();
+            CacheIndices();
 
             _isSimulationRunning = true;
         }
@@ -67,6 +69,18 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             _deltaXDistance = SimulationBounds.size.x / ResolutionX;
             _deltaZDistance = SimulationBounds.size.z / ResolutionY;
             _deltaDistance = Mathf.Sqrt(_deltaXDistance * _deltaXDistance + _deltaZDistance * _deltaZDistance);
+            // Lock minimum for editing and faster access
+            _min = SimulationBounds.min;
+        }
+
+        private void CacheIndices()
+        {
+            foreach (var plant in _plantList)
+            {
+                GetIndices(plant, out int x, out int y);
+                plant.IndexX = x; 
+                plant.IndexY = y;
+            }
         }
 
         private void Update()
@@ -90,9 +104,14 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void GetIndices(Plant plant, out int x, out int y)
         {
-            Vector3 delta = (plant.transform.position - SimulationBounds.min);
-            x = (int)(delta.x / SimulationBounds.size.x * ResolutionX) + 1;
-            y = (int)(delta.z / SimulationBounds.size.z * ResolutionY) + 1;
+            Vector3 pos = plant.transform.position;
+            x = (int)((pos.x - _min.x) / _deltaXDistance) + 1;
+            y = (int)((pos.z - _min.z) / _deltaZDistance) + 1;
+        }
+
+        private float GetLocalTemperature_NNCached(Plant plant)
+        {
+            return _heatTransferGrid[plant.IndexX, plant.IndexY];
         }
 
         private float GetLocalTemperature_NN(Plant plant)
@@ -103,11 +122,10 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private float GetLocalTemperature(Plant plant)
         {
-
-            Vector3 delta = (plant.transform.position - SimulationBounds.min);
+            Vector3 pos = plant.transform.position;
             // x,y correspond to the bottom corner of the grid cell
-            float x = (delta.x / SimulationBounds.size.x * ResolutionX) + 1;
-            float y = (delta.z / SimulationBounds.size.z * ResolutionY) + 1;
+            float x = ((pos.x - _min.x) / _deltaXDistance) + 1;
+            float y = ((pos.z - _min.z) / _deltaZDistance) + 1;
 
             float mixx = x % 1f;
             float mixy = y % 1f;
@@ -122,10 +140,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void UpdateTimesBeforeFlashpoint(float simulationDeltaTime)
         {
-            for (int i =  _plantList.ActivePlantsStart; i < _plantList.ActivePlantsEnd; ++i)
+            int start = _plantList.ActivePlantsStart;
+            int end = _plantList.ActivePlantsEnd;
+            for (int i =  start; i < end; ++i)
             {
                 Plant plant = _plantList[i];
-                var currentLocalTemperature = GetLocalTemperature(plant);
+                var currentLocalTemperature = GetLocalTemperature_NNCached(plant);
 
                 // Let's say flashpoint temperature is 600°C and let's ignore the heat transfer
                 // from air to the wood.
@@ -140,7 +160,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void UpdateBurningTimes(float simulationDeltaTime)
         {
-            for (int i = _plantList.BurningPlantsCount - 1; i >= 0; --i)
+            int start = _plantList.BurningPlantsCount - 1;
+            for (int i = start; i >= 0; --i)
             {
                 Plant plant = _plantList[i];
                 plant.TimeOnFire += simulationDeltaTime;
@@ -166,7 +187,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                 }
             }
 
-            for (int i = 0; i < _plantList.BurningPlantsCount; ++i)
+            int end = _plantList.BurningPlantsCount;
+            for (int i = 0; i < end; ++i)
             {
                 Plant plant = _plantList[i];
                 GetIndices(plant, out int x, out int y);

@@ -49,7 +49,6 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         internal void RemovePlant(Plant plant)
         {
-            // TODO write test
             int plantIndex = IndexOf(plant);
             switch (plant.State)
             {

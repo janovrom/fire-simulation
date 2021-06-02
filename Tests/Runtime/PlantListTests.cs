@@ -123,7 +123,63 @@ public class PlantListTests
         Assert.AreEqual(expected: 9, plantList.ActivePlantsEnd);
         Assert.AreEqual(expected: 10, plantList.BurnedPlantsStart);
         Assert.AreEqual(expected: 13, plantList.Count);
+    }
 
+    [Test]
+    public void TestRemovePlant()
+    {
+        PlantList plantList = GetPlantList();
+        plantList.LightPlant(6);
+        plantList.LightPlant(2);
+        plantList.LightPlant(4);
+        plantList.LightPlant(plantList.ActivePlantsEnd);
+        plantList.BurnDownPlant(2);
+        plantList.BurnDownPlant(0);
+
+        plantList.RemovePlant(plantList[4]); // Normal
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 2, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 2, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 5, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 6, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 7, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 9, plantList.Count);
+
+        plantList.RemovePlant(plantList[7]); // Burned
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 2, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 2, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 5, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 6, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 7, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 8, plantList.Count);
+
+        plantList.RemovePlant(plantList[0]); // On fire
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 1, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 1, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 5, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 5, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 6, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 7, plantList.Count);
+
+        plantList.RemovePlant(plantList[0]); // On fire
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 0, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 0, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 5, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 4, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 5, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 6, plantList.Count);
+
+        plantList.RemovePlant(plantList[0]); // Normal
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 0, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 0, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 4, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 3, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 4, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 5, plantList.Count);
     }
 
     private static void AssertCoherence(PlantList plantList)

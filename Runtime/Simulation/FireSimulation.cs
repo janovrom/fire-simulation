@@ -56,6 +56,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 Renderer.Unregister(plant);
                 _plantList.RemovePlant(plant);
+                Destroy(gameObject);
             }
         }
 
@@ -206,7 +207,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         {
             int start = _plantList.ActivePlantsStart;
             int end = _plantList.ActivePlantsEnd;
-            for (int i =  start; i < end; ++i)
+            for (int i =  start; i <= end; ++i)
             {
                 Plant plant = _plantList[i];
                 var currentLocalTemperature = GetLocalTemperature_NNCached(plant);

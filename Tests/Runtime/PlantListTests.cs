@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Janovrom.Firesimulation.Runtime.Simulation;
 using Janovrom.Firesimulation.Runtime.Plants;
+using UnityEngine;
 
 public class PlantListTests
 {
@@ -10,7 +11,7 @@ public class PlantListTests
     {
         var list = new List<Plant>(10);
         for (int i = 0; i < 10; ++i)
-            list.Add(new Plant());
+            list.Add(GetPlant());
 
         return new PlantList(list);
     }
@@ -41,11 +42,7 @@ public class PlantListTests
         Assert.AreEqual(expected: 9, plantList.ActivePlantsEnd);
         Assert.AreEqual(expected: 10, plantList.BurnedPlantsStart);
 
-        for (int i = 0; i < plantList.BurningPlantsCount; ++i)
-            Assert.AreEqual(expected: State.OnFire, plantList[i].State);
-
-        for (int i = plantList.ActivePlantsStart; i < plantList.ActivePlantsEnd; ++i)
-            Assert.AreEqual(expected: State.Normal, plantList[i].State);
+        AssertCoherence(plantList);
 
         for (int i = plantList.BurnedPlantsStart; i < plantList.Count; ++i)
             Assert.Fail();
@@ -68,14 +65,7 @@ public class PlantListTests
         Assert.AreEqual(expected: 8, plantList.ActivePlantsEnd);
         Assert.AreEqual(expected: 9, plantList.BurnedPlantsStart);
 
-        for (int i = 0; i < plantList.BurningPlantsCount; ++i)
-            Assert.AreEqual(expected: State.OnFire, plantList[i].State);
-
-        for (int i = plantList.ActivePlantsStart; i < plantList.ActivePlantsEnd; ++i)
-            Assert.AreEqual(expected: State.Normal, plantList[i].State);
-
-        for (int i = plantList.BurnedPlantsStart; i < plantList.Count; ++i)
-            Assert.AreEqual(expected: State.Burned, plantList[i].State);
+        AssertCoherence(plantList);
 
         // 1 burning plants, 6 active plants, 2 burned down plant
         plantList.BurnDownPlant(0);
@@ -85,6 +75,59 @@ public class PlantListTests
         Assert.AreEqual(expected: 7, plantList.ActivePlantsEnd);
         Assert.AreEqual(expected: 8, plantList.BurnedPlantsStart);
 
+        AssertCoherence(plantList);
+
+    }
+
+    [Test]
+    public void TestAddPlant()
+    {
+        // There should be 3 burning plants, followed by 5 active plants, and 2 burned.
+        // State is checked by previous test.
+        PlantList plantList = GetPlantList();
+        plantList.LightPlant(6);
+        plantList.LightPlant(2);
+        plantList.LightPlant(plantList.ActivePlantsEnd);
+        plantList.BurnDownPlant(2);
+        plantList.BurnDownPlant(0);
+
+        Plant p0 = GetPlant();
+        p0.State = State.Burned;
+        plantList.AddPlant(p0);
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 1, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 1, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 7, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 7, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 8, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 11, plantList.Count);
+
+        Plant p1 = GetPlant();
+        p1.State = State.Normal;
+        plantList.AddPlant(p1);
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 1, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 1, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 8, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 8, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 9, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 12, plantList.Count);
+
+        Plant p2 = GetPlant();
+        p2.State = State.OnFire;
+        plantList.AddPlant(p2);
+        AssertCoherence(plantList);
+        Assert.AreEqual(expected: 2, plantList.BurningPlantsCount);
+        Assert.AreEqual(expected: 2, plantList.ActivePlantsStart);
+        Assert.AreEqual(expected: 8, plantList.ActivePlantsCount);
+        Assert.AreEqual(expected: 9, plantList.ActivePlantsEnd);
+        Assert.AreEqual(expected: 10, plantList.BurnedPlantsStart);
+        Assert.AreEqual(expected: 13, plantList.Count);
+
+    }
+
+    private static void AssertCoherence(PlantList plantList)
+    {
         for (int i = 0; i < plantList.BurningPlantsCount; ++i)
             Assert.AreEqual(expected: State.OnFire, plantList[i].State);
 
@@ -93,7 +136,11 @@ public class PlantListTests
 
         for (int i = plantList.BurnedPlantsStart; i < plantList.Count; ++i)
             Assert.AreEqual(expected: State.Burned, plantList[i].State);
+    }
 
+    private static Plant GetPlant()
+    {
+        return new GameObject().AddComponent<Plant>();
     }
 
 }

@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Janovrom.Firesimulation.Runtime
+namespace Janovrom.Firesimulation.Runtime.Utility
 {
     [RequireComponent(typeof(Camera))]
     public class CameraMovement : MonoBehaviour
@@ -13,12 +11,15 @@ namespace Janovrom.Firesimulation.Runtime
         public float lookSpeedV = 2f;
         public float zoomSpeed = 2f;
         public float dragSpeed = 6f;
-        public GameObject CameraCrosshair;
+        public float CrosshairPixelRadius = 5f;
+        public GameObject CameraCrosshairPrefab;
         public LayerMask PickMask;
+        public Vector3Variable CrosshairPosition;
 
         public float yaw;
         public float pitch;
         private Camera _camera;
+        private GameObject _cameraCrosshair;
 
 
         private void Awake()
@@ -28,17 +29,40 @@ namespace Janovrom.Firesimulation.Runtime
             // Set default values
             pitch = _camera.transform.eulerAngles.x;
             yaw = _camera.transform.eulerAngles.y;
+
+            if (CameraCrosshairPrefab is object)
+            {
+                _cameraCrosshair = GameObject.Instantiate(CameraCrosshairPrefab);
+                UpdateCrosshair();
+            }
         }
 
         void Update()
         {
-            var crosshairRay = _camera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(crosshairRay, out RaycastHit hit, 1000f, PickMask))
-            {
-                CameraCrosshair.transform.position = hit.point;
-            }
+            UpdateCrosshair();
+            LookAround();
+            DragCamera();
+            CameraZoom();
+            SetYawPitch();
+        }
 
-            //Look around with Right Mouse
+        private void UpdateCrosshair()
+        {
+            var crosshairRay = _camera.ScreenPointToRay(Input.mousePosition);
+            if (_cameraCrosshair is object && Physics.Raycast(crosshairRay, out RaycastHit hit, 10000f, PickMask))
+            {
+                _cameraCrosshair.transform.position = hit.point;
+                Vector3 hitOnScreen = _camera.WorldToScreenPoint(hit.point);
+                Vector3 projectedToWorld = _camera.ScreenToWorldPoint(hitOnScreen + Vector3.right * CrosshairPixelRadius);
+                _cameraCrosshair.transform.localScale = Vector3.one * (projectedToWorld - hit.point).magnitude;
+                
+                if (CrosshairPosition is object)
+                    CrosshairPosition.Value = hit.point;            
+            }
+        }
+
+        private void LookAround()
+        {
             if (Input.GetMouseButton(1))
             {
 
@@ -49,8 +73,10 @@ namespace Janovrom.Firesimulation.Runtime
                 pitch -= lookSpeedV * Input.GetAxis("Mouse Y");
 
             }
+        }
 
-            //drag camera around with Middle Mouse
+        private void DragCamera()
+        {
             if (Input.GetMouseButton(2))
             {
                 transform.Translate(-Input.GetAxisRaw("Mouse X") * Time.deltaTime * dragSpeed,
@@ -62,8 +88,10 @@ namespace Janovrom.Firesimulation.Runtime
                 float vertical = Input.GetAxis("Vertical");
                 transform.Translate(Time.deltaTime * dragSpeed * (Vector3.right * horizontal + Vector3.up * vertical));
             }
+        }
 
-            //Zoom in and out with Mouse Wheel
+        private void CameraZoom()
+        {
             if (Input.GetAxis("Mouse ScrollWheel") != 0)
             {
                 float speed = Input.GetAxis("Mouse ScrollWheel") * zoomSpeed * Time.deltaTime;
@@ -74,8 +102,7 @@ namespace Janovrom.Firesimulation.Runtime
                 else
                 {
                     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                    RaycastHit point;
-                    Physics.Raycast(ray, out point, 25);
+                    Physics.Raycast(ray, out _, 25);
                     Vector3 Scrolldirection = ray.GetPoint(5);
 
                     transform.position = Vector3.MoveTowards(transform.position, Scrolldirection, speed);
@@ -85,12 +112,15 @@ namespace Janovrom.Firesimulation.Runtime
             {
                 float mod = Input.GetKey(KeyCode.LeftShift) ? -1f : 1f;
 
-                transform.Translate(mod * Vector3.forward * dragSpeed * Time.deltaTime);
+                transform.Translate(dragSpeed * mod * Time.deltaTime * Vector3.forward);
             }
+        }
 
+        private void SetYawPitch()
+        {
             transform.eulerAngles = new Vector3(pitch, yaw, 0f);
-            yaw = yaw % 360;
-            pitch = pitch % 360;
+            yaw %= 360;
+            pitch %= 360;
         }
 
     }

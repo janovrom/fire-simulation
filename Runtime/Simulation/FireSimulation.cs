@@ -29,20 +29,45 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         private float[,] _heatTransferGrid;
 
         private float _deltaXDistance, _deltaZDistance, _deltaDistance;
+
         private Vector3 _min;
         private bool _isSimulationRunning = false;
 
-        private const float _FireTemperature = 1200f;
-        private const float _FlashpointTemperature = 600f;
+        private const float _fireTemperature = 1200f;
+        private const float _flashpointTemperature = 600f;
         private const int _loopStart = 1;
         private const int _padding = _loopStart * 2;
 
+        public void AddPlant(Vector3 position)
+        {
+            if (_plantList is null)
+                return;
+
+            Plant plant = PlantGenerator.GetPlant(in position);
+            Renderer.Register(plant);
+            _plantList.AddPlant(plant);
+            CacheIndices(plant);
+        }
+
+        public void RemovePlant(Plant plant)
+        {
+            if (_plantList is null)
+                return;
+
+            Renderer.Unregister(plant);
+            _plantList.RemovePlant(plant);
+        }
 
         public void ClearPlants()
         {
             PauseSimulation();
-            Renderer?.Clear();
-            PlantGenerator?.Clear();
+
+            if (Renderer is object)
+                Renderer.Clear();
+
+            if (PlantGenerator is object)
+                PlantGenerator.Clear();
+
             _plantList = null;
         }
 
@@ -100,10 +125,15 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         {
             foreach (var plant in _plantList)
             {
-                GetIndices(plant, out int x, out int y);
-                plant.IndexX = x; 
-                plant.IndexY = y;
+                CacheIndices(plant);
             }
+        }
+
+        private void CacheIndices(Plant plant)
+        {
+            GetIndices(plant, out int x, out int y);
+            plant.IndexX = x;
+            plant.IndexY = y;
         }
 
         private void Update()
@@ -116,7 +146,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             FireSourceRadiation(simulationDeltaTime * HeatTransferSpeed);
             ApplyWind(simulationDeltaTime * HeatTransferSpeed);
             UpdateBurningTimes(simulationDeltaTime);
-            UpdateTimesBeforeFlashpoint(simulationDeltaTime);
+            UpdateTimesBeforeFlashpoint();
             Renderer.Render();
         }
 
@@ -161,7 +191,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             return mixy * x1 + (1f - mixy) * x0;
         }
 
-        private void UpdateTimesBeforeFlashpoint(float simulationDeltaTime)
+        private void UpdateTimesBeforeFlashpoint()
         {
             int start = _plantList.ActivePlantsStart;
             int end = _plantList.ActivePlantsEnd;
@@ -172,7 +202,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
                 // Let's say flashpoint temperature is 600°C and let's ignore the heat transfer
                 // from air to the wood.
-                if (currentLocalTemperature > _FlashpointTemperature)
+                if (currentLocalTemperature > _flashpointTemperature)
                 {
                     // Light the fire
                     _plantList.LightPlant(i);
@@ -215,7 +245,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 Plant plant = _plantList[i];
                 GetIndices(plant, out int x, out int y);
-                _fireSourceGrid[x, y] = Mathf.Max(_fireSourceGrid[x, y], _FireTemperature);
+                _fireSourceGrid[x, y] = Mathf.Max(_fireSourceGrid[x, y], _fireTemperature);
             }
         }
 

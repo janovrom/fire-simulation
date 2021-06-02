@@ -11,7 +11,6 @@ namespace Janovrom.Firesimulation.Runtime.PlantGenerators
         public int ResolutionX;
         public int ResolutionZ;
         public LayerMask CreateOn;
-        public Plant PlantPrefab;
 
         public int Count => ResolutionX * ResolutionZ;
 

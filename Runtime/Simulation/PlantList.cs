@@ -1,4 +1,5 @@
 ﻿using Janovrom.Firesimulation.Runtime.Plants;
+using System;
 using System.Collections.Generic;
 
 namespace Janovrom.Firesimulation.Runtime.Simulation
@@ -6,7 +7,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
     internal class PlantList : List<Plant>
     {
 
-        public const int BurningPlantsStart = 0;
+        internal const int BurningPlantsStart = 0;
         public int BurningPlantsCount { get; private set; }
         public int ActivePlantsStart => BurningPlantsCount;
         public int ActivePlantsEnd => ActivePlantsStart + ActivePlantsCount - 1;
@@ -14,13 +15,64 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public int BurnedPlantsStart => BurningPlantsCount + ActivePlantsCount;
 
 
-        public PlantList(IEnumerable<Plant> plants) : base(plants)
+        internal PlantList(IEnumerable<Plant> plants) : base(plants)
         {
             BurningPlantsCount = 0;
             ActivePlantsCount = Count;
         }
 
-        public void LightPlant(int index)
+        internal void AddPlant(Plant plant)
+        {
+            base.Add(plant);
+            switch (plant.State)
+            {
+                case State.Normal:
+                    // Swap with first burned
+                    Plant burned = this[BurnedPlantsStart];
+                    this[BurnedPlantsStart] = plant;
+                    this[Count - 1] = burned;
+                    ActivePlantsCount += 1;
+                    break;
+                case State.OnFire:
+                    // Swap with first burned
+                    Plant normal = this[ActivePlantsStart];
+                    this[Count - 1] = this[BurnedPlantsStart];
+                    this[BurnedPlantsStart] = normal;
+                    this[ActivePlantsStart] = plant;
+                    BurningPlantsCount += 1;
+                    break;
+                case State.Burned:
+                    // Finished, it should be placed at end
+                    break;
+            }
+        }
+
+        internal void RemovePlant(Plant plant)
+        {
+            switch (plant.State)
+            {
+                case State.Normal:
+                    // Swap with first burned
+                    Plant burned = this[BurnedPlantsStart];
+                    this[BurnedPlantsStart] = plant;
+                    this[Count - 1] = burned;
+                    ActivePlantsCount += 1;
+                    break;
+                case State.OnFire:
+                    // Swap with first burned
+                    Plant normal = this[ActivePlantsStart];
+                    this[Count - 1] = this[BurnedPlantsStart];
+                    this[BurnedPlantsStart] = normal;
+                    this[ActivePlantsStart] = plant;
+                    BurningPlantsCount += 1;
+                    break;
+                case State.Burned:
+                    // Finished, it should be placed at end
+                    break;
+            }
+        }
+
+        internal void LightPlant(int index)
         {
             Plant plant = this[index];
             if (plant.State == State.Normal)
@@ -34,7 +86,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
-        public void BurnDownPlant(int index)
+        internal void BurnDownPlant(int index)
         {
             Plant plant = this[index];
             if (plant.State == State.OnFire)

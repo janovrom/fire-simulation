@@ -18,7 +18,7 @@ namespace Janovrom.Firesimulation.Runtime.Renderers
 
         public override void NotifyStateChange(Plant plant)
         {
-            var renderer = plant.GetComponent<MeshRenderer>();
+            var renderer = plant.GetComponentInChildren<MeshRenderer>();
             if (renderer is null)
                 return;
 

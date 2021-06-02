@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1755996880113687838}
   - component: {fileID: 7867472131494940209}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: PlantPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -61,7 +61,7 @@ GameObject:
   - component: {fileID: 2876666338155571960}
   - component: {fileID: 551102291526430944}
   - component: {fileID: 4108326990868912531}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: PlantPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}

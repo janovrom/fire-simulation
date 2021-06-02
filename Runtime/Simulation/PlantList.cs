@@ -49,27 +49,27 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         internal void RemovePlant(Plant plant)
         {
+            // TODO write test
+            int plantIndex = IndexOf(plant);
             switch (plant.State)
             {
                 case State.Normal:
-                    // Swap with first burned
-                    Plant burned = this[BurnedPlantsStart];
-                    this[BurnedPlantsStart] = plant;
-                    this[Count - 1] = burned;
-                    ActivePlantsCount += 1;
+                    this[plantIndex] = this[ActivePlantsEnd];
+                    this[ActivePlantsEnd] = this[Count - 1];
+                    ActivePlantsCount -= 1;
                     break;
                 case State.OnFire:
                     // Swap with first burned
-                    Plant normal = this[ActivePlantsStart];
-                    this[Count - 1] = this[BurnedPlantsStart];
-                    this[BurnedPlantsStart] = normal;
-                    this[ActivePlantsStart] = plant;
-                    BurningPlantsCount += 1;
+                    this[plantIndex] = this[BurningPlantsCount - 1];
+                    this[BurningPlantsCount - 1] = this[ActivePlantsEnd];
+                    this[ActivePlantsEnd] = this[Count - 1];
+                    BurningPlantsCount -= 1;
                     break;
                 case State.Burned:
-                    // Finished, it should be placed at end
+                    this[plantIndex] = this[Count - 1];
                     break;
             }
+            RemoveAt(Count - 1);
         }
 
         internal void LightPlant(int index)

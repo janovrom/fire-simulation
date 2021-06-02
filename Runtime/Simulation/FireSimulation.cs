@@ -49,13 +49,24 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             CacheIndices(plant);
         }
 
-        public void RemovePlant(Plant plant)
+        public void RemovePlant(GameObject gameObject)
         {
-            if (_plantList is null)
-                return;
+            var plant = gameObject.GetComponentInParent<Plant>();
+            if (_plantList is object && plant is object)
+            {
+                Renderer.Unregister(plant);
+                _plantList.RemovePlant(plant);
+            }
+        }
 
-            Renderer.Unregister(plant);
-            _plantList.RemovePlant(plant);
+        public void LightFire(GameObject gameObject)
+        {
+            var plant = gameObject.GetComponentInParent<Plant>();
+            if (_plantList is object && plant is object)
+            {
+                _plantList.LightPlant(_plantList.IndexOf(plant));
+                Renderer.NotifyStateChange(plant);
+            }
         }
 
         public void ClearPlants()

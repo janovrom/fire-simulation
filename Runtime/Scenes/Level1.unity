@@ -244,8 +244,8 @@ MonoBehaviour:
   ResolutionX: 64
   ResolutionY: 64
   HeatTransferSpeed: 0.258
-  WindSpeed: 24.9
-  WindDirection: {x: 1, y: 0, z: 0}
+  WindSpeedNormalized: {fileID: 11400000, guid: c7d1c4ea2b126e14a9ccd238347d2b41, type: 2}
+  WindAngleNormalized: {fileID: 11400000, guid: 0e2ea79c0f669f24dbee8b99176fecce, type: 2}
   SimulationBounds:
     m_Center: {x: 500, y: 100, z: 500}
     m_Extent: {x: 400, y: 100, z: 400}

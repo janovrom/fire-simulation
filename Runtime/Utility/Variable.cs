@@ -25,6 +25,8 @@ namespace Janovrom.Firesimulation.Runtime.Utility
             Value = value;
         }
 
+        public static implicit operator T(Variable<T> variable) => variable.Value;
+
         private void OnEnable()
         {
             Value = _defaultVariable;

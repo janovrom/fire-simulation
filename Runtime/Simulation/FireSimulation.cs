@@ -1,9 +1,7 @@
 ﻿using Janovrom.Firesimulation.Runtime.PlantGenerators;
 using Janovrom.Firesimulation.Runtime.Plants;
 using Janovrom.Firesimulation.Runtime.Renderers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Janovrom.Firesimulation.Runtime.Utility;
 using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Simulation
@@ -18,9 +16,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public int ResolutionY = 256;
         [Range(0f, 1f)]
         public float HeatTransferSpeed = 1f;
-        [Range(0f, 100f)]
-        public float WindSpeed = 0f;
-        public Vector3 WindDirection = Vector3.right;
+        public FloatVariable WindSpeedNormalized;
+        public FloatVariable WindAngleNormalized;
         public Bounds SimulationBounds;
 
         private PlantList _plantList;
@@ -47,11 +44,6 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             Renderer.Register(plant);
             _plantList.AddPlant(plant);
             CacheIndices(plant);
-        }
-
-        public void SetWindSpeed(float windSpeedNorm)
-        {
-            WindSpeed = windSpeedNorm * 100f;
         }
 
         public void RemovePlant(GameObject gameObject)
@@ -288,7 +280,10 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void ApplyWind(float deltaTime)
         {
-            Vector3 heatPropagation = WindDirection.normalized * WindSpeed + Vector3.up;
+            float windSpeed = WindSpeedNormalized * 100f;
+            float windAngle = WindAngleNormalized * Mathf.PI * 2f;
+            // 10 for drag up
+            Vector3 heatPropagation = new Vector3(Mathf.Cos(windAngle) * windSpeed, 10f, Mathf.Sin(windAngle) * windSpeed);
             heatPropagation.Normalize();
             int ix = (int)Mathf.Sign(heatPropagation.x) * (Mathf.Abs(heatPropagation.x) > 0.707f ? 1 : 0);
             int iz = (int)Mathf.Sign(heatPropagation.z) * (Mathf.Abs(heatPropagation.z) > 0.707f ? 1 : 0);

@@ -27,9 +27,9 @@ namespace Janovrom.Firesimulation.Runtime.Utility
 
         private void Update()
         {
-            if (SimulationMode.Value == _AddMode) TryAddPlant();
-            else if (SimulationMode.Value == _FireMode) TryLightFire();
-            else if (SimulationMode.Value == _RemoveMode) TryRemovePlant();
+            if (SimulationMode == _AddMode) TryAddPlant();
+            else if (SimulationMode == _FireMode) TryLightFire();
+            else if (SimulationMode == _RemoveMode) TryRemovePlant();
         }
 
         private void TryAddPlant()

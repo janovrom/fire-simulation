@@ -1,15 +1,15 @@
 {
-    "name": "janovrom.fire_simulation",
-    "version": "0.0.1",
-    "displayName": "Fire simulation",
-    "description": "Prototype for fire simulation with simple color/temperature rendering.",
-    "unity": "2020.1",
-    "keywords": [
-        "fire simulation"
-    ],
-    "author": {
-        "name": "Roman Janovsky",
-        "email": "roman.janovsky9@seznam.cz",
-        "url": "https://github.com/janovrom/fire-simulation"
-    }
+  "name": "janovrom.fire_simulation",
+  "version": "0.9.0-pre",
+  "displayName": "Fire simulation",
+  "description": "Prototype for fire simulation with simple color/temperature rendering.",
+  "unity": "2020.1",
+  "keywords": [
+    "fire simulation"
+  ],
+  "author": {
+    "name": "Roman Janovsky",
+    "email": "roman.janovsky9@seznam.cz",
+    "url": "https://github.com/janovrom/fire-simulation"
+  }
 }

@@ -10,12 +10,6 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         private T _defaultVariable = default;
         public T Value;
 
-
-        private void OnEnable()
-        {
-            Value = _defaultVariable;
-        }
-
         public void OnAfterDeserialize()
         {
             // Called during instantiation for example
@@ -25,6 +19,17 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         public void OnBeforeSerialize()
         {
         }
+
+        public void SetValue(T value)
+        {
+            Value = value;
+        }
+
+        private void OnEnable()
+        {
+            Value = _defaultVariable;
+        }
+
     }
 
 

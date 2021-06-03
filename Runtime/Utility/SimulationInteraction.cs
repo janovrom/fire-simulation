@@ -7,35 +7,29 @@ namespace Janovrom.Firesimulation.Runtime.Utility
     public class SimulationInteraction : MonoBehaviour
     {
 
-        private const int AddMode = 0;
-        private const int FireMode = 1;
-        private const int RemoveMode = 2;
+        private const int _AddMode = 0;
+        private const int _FireMode = 1;
+        private const int _RemoveMode = 2;
 
         public LayerMask PlaceLayer;
         public LayerMask FireLayer;
         public Vector3Variable CrosshairPosition;
+        public IntVariable SimulationMode;
 
         private Simulation.FireSimulation _fireSimulation;
         private Camera _camera;
-        private int _mode = 0;
 
-
-        public void ChangeMode(int newMode)
-        {
-            _mode = newMode;
-        }
-
-        void Awake()
+        private void Awake()
         {
             _fireSimulation = GetComponent<Simulation.FireSimulation>();
             _camera = Camera.main;
         }
 
-        void Update()
+        private void Update()
         {
-            if (_mode == AddMode) TryAddPlant();
-            else if (_mode == FireMode) TryLightFire();
-            else if (_mode == RemoveMode) TryRemovePlant();
+            if (SimulationMode.Value == _AddMode) TryAddPlant();
+            else if (SimulationMode.Value == _FireMode) TryLightFire();
+            else if (SimulationMode.Value == _RemoveMode) TryRemovePlant();
         }
 
         private void TryAddPlant()

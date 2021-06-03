@@ -49,6 +49,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             CacheIndices(plant);
         }
 
+        public void SetWindSpeed(float windSpeedNorm)
+        {
+            WindSpeed = windSpeedNorm * 100f;
+        }
+
         public void RemovePlant(GameObject gameObject)
         {
             var plant = gameObject.GetComponentInParent<Plant>();
@@ -153,12 +158,21 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             if (!_isSimulationRunning)
                 return;
 
-            float simulationDeltaTime = Time.deltaTime;
+            float simulationDeltaTime = Time.deltaTime * HeatTransferSpeed;
+
+            // Caching so that each fire source in cell is used only once
             SetFireTemperatures();
-            FireSourceRadiation(simulationDeltaTime * HeatTransferSpeed);
-            ApplyWind(simulationDeltaTime * HeatTransferSpeed);
-            UpdateBurningTimes(simulationDeltaTime);
+            FireSourceRadiation(simulationDeltaTime);
+            ApplyWind(simulationDeltaTime);
+            Dissipate(simulationDeltaTime);
+
+            // Mask out unneeded cells
+            ApplyMask();
+
+            // Update states
+            UpdateBurningTimes(Time.deltaTime);
             UpdateTimesBeforeFlashpoint();
+
             Renderer.Render();
         }
 
@@ -307,6 +321,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     // from x,y to x+ix, y + iy.
                     dt = Mathf.Abs(dt);
                     _heatTransferGrid[x, y] -= dt;
+                    _heatTransferGrid[x, y] = Mathf.Max(_heatTransferGrid[x, y], 0f);
                     _heatTransferGrid[x + ix, y + iz] += dt;
                 }
             }
@@ -314,6 +329,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void FireSourceRadiation(float deltaTime)
         {
+            // Having only one source per grid cell proves to have nicer results.
+            // Especially wind is positively affected.
             for (int x = _loopStart; x < ResolutionX + _loopStart; ++x)
             {
                 for (int y = _loopStart; y < ResolutionY + _loopStart; ++y)
@@ -329,6 +346,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     float dx0y1 = (_fireSourceGrid[x - 1, y + 1] - t) * deltaTime / _deltaDistance;
                     float dx1y0 = (_fireSourceGrid[x + 1, y - 1] - t) * deltaTime / _deltaDistance;
                     float dx1y1 = (_fireSourceGrid[x + 1, y + 1] - t) * deltaTime / _deltaDistance;
+
+                    // Let's divide by radius of the cell
+                    _heatTransferGrid[x, y] += t * deltaTime;
 
                     // When d* is negative, we should add as it means, that [x,y] has higher
                     // temperature and we should propagate from higher to lower temperature.

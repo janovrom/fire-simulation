@@ -11,8 +11,8 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         private const int _FireMode = 1;
         private const int _RemoveMode = 2;
 
-        public LayerMask PlaceLayer;
-        public LayerMask FireLayer;
+        public LayerMask PlaceLayer = ~0;
+        public LayerMask FireLayer = ~0;
         public Vector3Variable CrosshairPosition;
         public IntVariable SimulationMode;
 

@@ -13,7 +13,7 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         public float dragSpeed = 6f;
         public float CrosshairPixelRadius = 5f;
         public GameObject CameraCrosshairPrefab;
-        public LayerMask PickMask;
+        public LayerMask PickMask = ~0;
         public Vector3Variable CrosshairPosition;
 
         public float yaw;

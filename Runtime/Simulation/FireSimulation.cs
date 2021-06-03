@@ -282,8 +282,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         {
             float windSpeed = WindSpeedNormalized * 100f;
             float windAngle = WindAngleNormalized * Mathf.PI * 2f;
-            // 10 for drag up
-            Vector3 heatPropagation = new Vector3(Mathf.Cos(windAngle) * windSpeed, 10f, Mathf.Sin(windAngle) * windSpeed);
+            // 1 on y for drag up
+            Vector3 heatPropagation = new Vector3(Mathf.Cos(windAngle) * windSpeed, 1f, Mathf.Sin(windAngle) * windSpeed);
             heatPropagation.Normalize();
             int ix = (int)Mathf.Sign(heatPropagation.x) * (Mathf.Abs(heatPropagation.x) > 0.707f ? 1 : 0);
             int iz = (int)Mathf.Sign(heatPropagation.z) * (Mathf.Abs(heatPropagation.z) > 0.707f ? 1 : 0);

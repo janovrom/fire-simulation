@@ -1,6 +1,6 @@
 {
   "name": "janovrom.fire_simulation",
-  "version": "0.9.0-pre",
+  "version": "0.9.1-pre",
   "displayName": "Fire simulation",
   "description": "Prototype for fire simulation with simple color/temperature rendering.",
   "unity": "2020.1",
@@ -11,5 +11,17 @@
     "name": "Roman Janovsky",
     "email": "roman.janovsky9@seznam.cz",
     "url": "https://github.com/janovrom/fire-simulation"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Small fire on plane",
+      "description": "Small fire simulation done on simple plane. Plants are placed in regular grid whose size can be configured. Simulation is running in a small grid as well. Total amount of plants is 1600.",
+      "path": "Samples~/Small fire"
+    },
+    {
+      "displayName": "Large fire on terrain",
+      "description": "Large fire simulation done on unity terrain. Plants are placed in a grid and jittered. Simulation is running in a larger grid. Total amount of plants is 40000.",
+      "path": "Samples~/Large fire"
+    }
+  ]
 }

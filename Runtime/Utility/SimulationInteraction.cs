@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Janovrom.Firesimulation.Runtime.Variables;
+using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Utility
 {
@@ -35,7 +36,7 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         private void TryAddPlant()
         {
             bool clickCheck = Input.GetMouseButtonUp(0);
-            if (clickCheck && CrosshairPosition is object)
+            if (clickCheck && !(CrosshairPosition is null))
             {
                 _fireSimulation.AddPlant(CrosshairPosition.Value);
             }

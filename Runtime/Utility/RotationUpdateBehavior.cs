@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Janovrom.Firesimulation.Runtime.Variables;
+using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Utility
 {

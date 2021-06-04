@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Janovrom.Firesimulation.Runtime.Variables;
+using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Utility
 {
@@ -30,14 +31,14 @@ namespace Janovrom.Firesimulation.Runtime.Utility
             pitch = _camera.transform.eulerAngles.x;
             yaw = _camera.transform.eulerAngles.y;
 
-            if (CameraCrosshairPrefab is object)
+            if (!(CameraCrosshairPrefab is null))
             {
                 _cameraCrosshair = GameObject.Instantiate(CameraCrosshairPrefab);
                 UpdateCrosshair();
             }
         }
 
-        void Update()
+        private void Update()
         {
             UpdateCrosshair();
             LookAround();
@@ -49,14 +50,14 @@ namespace Janovrom.Firesimulation.Runtime.Utility
         private void UpdateCrosshair()
         {
             var crosshairRay = _camera.ScreenPointToRay(Input.mousePosition);
-            if (_cameraCrosshair is object && Physics.Raycast(crosshairRay, out RaycastHit hit, 10000f, PickMask))
+            if (!(_cameraCrosshair is null) && Physics.Raycast(crosshairRay, out RaycastHit hit, 10000f, PickMask))
             {
                 _cameraCrosshair.transform.position = hit.point;
                 Vector3 hitOnScreen = _camera.WorldToScreenPoint(hit.point);
                 Vector3 projectedToWorld = _camera.ScreenToWorldPoint(hitOnScreen + Vector3.right * CrosshairPixelRadius);
                 _cameraCrosshair.transform.localScale = Vector3.one * (projectedToWorld - hit.point).magnitude;
                 
-                if (CrosshairPosition is object)
+                if (!(CrosshairPosition is null))
                     CrosshairPosition.Value = hit.point;            
             }
         }

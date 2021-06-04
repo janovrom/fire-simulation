@@ -1,7 +1,8 @@
-﻿using Janovrom.Firesimulation.Runtime.PlantGenerators;
+﻿using Janovrom.Firesimulation.Runtime.Bindings;
+using Janovrom.Firesimulation.Runtime.PlantGenerators;
 using Janovrom.Firesimulation.Runtime.Plants;
 using Janovrom.Firesimulation.Runtime.Renderers;
-using Janovrom.Firesimulation.Runtime.Utility;
+using Janovrom.Firesimulation.Runtime.Variables;
 using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Simulation
@@ -19,6 +20,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public FloatVariable WindSpeedNormalized;
         public FloatVariable WindAngleNormalized;
         public Bounds SimulationBounds;
+        public BoolBinding IsSimulationRunning;
 
         private PlantList _plantList;
 
@@ -26,18 +28,26 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         private float[,] _heatTransferGrid;
 
         private float _deltaXDistance, _deltaZDistance, _deltaDistance;
-
-        private Vector3 _min;
         private bool _isSimulationRunning = false;
+        private Vector3 _min;
 
         private const float _fireTemperature = 1200f;
         private const float _flashpointTemperature = 600f;
         private const int _loopStart = 1;
         private const int _padding = _loopStart * 2;
 
+        public void ToggleSimulation(bool value)
+        {
+            _isSimulationRunning = value;
+        }
+
         public void AddPlant(Vector3 position)
         {
             if (_plantList is null)
+                return;
+
+            // Don't create plants outside the simulation
+            if (!SimulationBounds.Contains(position))
                 return;
 
             Plant plant = PlantGenerator.GetPlant(in position);
@@ -49,7 +59,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public void RemovePlant(GameObject gameObject)
         {
             var plant = gameObject.GetComponentInParent<Plant>();
-            if (_plantList is object && plant is object)
+            if (!(_plantList is null) && !(plant is null))
             {
                 Renderer.Unregister(plant);
                 _plantList.RemovePlant(plant);
@@ -60,7 +70,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public void LightFire(GameObject gameObject)
         {
             var plant = gameObject.GetComponentInParent<Plant>();
-            if (_plantList is object && plant is object)
+            if (!(_plantList is null) && !(plant is null))
             {
                 _plantList.LightPlant(_plantList.IndexOf(plant));
                 Renderer.NotifyStateChange(plant);
@@ -69,12 +79,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         public void ClearPlants()
         {
-            PauseSimulation();
+            IsSimulationRunning.Value = false;
 
-            if (Renderer is object)
+            if (!(Renderer is null))
                 Renderer.Clear();
 
-            if (PlantGenerator is object)
+            if (!(PlantGenerator is null))
                 PlantGenerator.Clear();
 
             _plantList = null;
@@ -85,7 +95,8 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             if (PlantGenerator is null)
                 return;
 
-            PauseSimulation();
+            IsSimulationRunning.Value = false;
+
             ClearPlants();
 
             _plantList = new PlantList(PlantGenerator.GetPlants(SimulationBounds.min, SimulationBounds.max));
@@ -97,25 +108,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 Renderer.Register(plant);
             }
-        }
-
-        public void PauseSimulation()
-        {
-            _isSimulationRunning = false;
-        }
-
-        public void StartSimulation()
-        {
-            if (PlantGenerator is null)
-                return;
-
-            if (_plantList is null)
-                GeneratePlants();
 
             InitializeGrid();
             CacheIndices();
 
-            _isSimulationRunning = true;
+            IsSimulationRunning.Value = true;
         }
 
         private void InitializeGrid()
@@ -147,13 +144,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void Update()
         {
-            if (!_isSimulationRunning)
+            if (!_isSimulationRunning || _plantList is null)
                 return;
 
             float simulationDeltaTime = Time.deltaTime * HeatTransferSpeed;
 
             // Caching so that each fire source in cell is used only once
-            SetFireTemperatures();
             FireSourceRadiation(simulationDeltaTime);
             ApplyWind(simulationDeltaTime);
             Dissipate(simulationDeltaTime);
@@ -170,7 +166,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void OnDisable()
         {
-            _isSimulationRunning = false;
+            IsSimulationRunning.Value = false;
         }
 
         private void GetIndices(Plant plant, out int x, out int y)
@@ -248,8 +244,9 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         {
         }
 
-        private void SetFireTemperatures()
+        private void FireSourceRadiation(float deltaTime)
         {
+            // Reset the look up table
             for (int x = 0; x < ResolutionX + _padding; ++x)
             {
                 for (int y = 0; y < ResolutionY + _padding; ++y)
@@ -263,7 +260,37 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 Plant plant = _plantList[i];
                 GetIndices(plant, out int x, out int y);
+                if (_fireSourceGrid[x, y] > 0f)
+                    continue;
+
                 _fireSourceGrid[x, y] = Mathf.Max(_fireSourceGrid[x, y], _fireTemperature);
+
+                float t = _fireTemperature;
+
+                float dy0 = (_fireSourceGrid[x, y - 1] - t) * deltaTime / _deltaZDistance;
+                float dy1 = (_fireSourceGrid[x, y + 1] - t) * deltaTime / _deltaZDistance;
+                float dx0 = (_fireSourceGrid[x - 1, y] - t) * deltaTime / _deltaXDistance;
+                float dx1 = (_fireSourceGrid[x + 1, y] - t) * deltaTime / _deltaXDistance;
+
+                float dx0y0 = (_fireSourceGrid[x - 1, y - 1] - t) * deltaTime / _deltaDistance;
+                float dx0y1 = (_fireSourceGrid[x - 1, y + 1] - t) * deltaTime / _deltaDistance;
+                float dx1y0 = (_fireSourceGrid[x + 1, y - 1] - t) * deltaTime / _deltaDistance;
+                float dx1y1 = (_fireSourceGrid[x + 1, y + 1] - t) * deltaTime / _deltaDistance;
+
+                // Let's divide by radius of the cell
+                _heatTransferGrid[x, y] += t * deltaTime;
+
+                // When d* is negative, we should add as it means, that [x,y] has higher
+                // temperature and we should propagate from higher to lower temperature.
+                _heatTransferGrid[x, y - 1] -= dy0;
+                _heatTransferGrid[x, y + 1] -= dy1;
+                _heatTransferGrid[x - 1, y] -= dx0;
+                _heatTransferGrid[x + 1, y] -= dx1;
+
+                _heatTransferGrid[x - 1, y - 1] -= dx0y0;
+                _heatTransferGrid[x - 1, y + 1] -= dx0y1;
+                _heatTransferGrid[x + 1, y - 1] -= dx1y0;
+                _heatTransferGrid[x + 1, y + 1] -= dx1y1;
             }
         }
 
@@ -273,7 +300,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             {
                 for (int y = 1; y <= ResolutionY; ++y)
                 {
-                    _heatTransferGrid[x, y] = Mathf.Max(0f, _heatTransferGrid[x, y] - deltaTime * 0.1f);
+                    _heatTransferGrid[x, y] = Mathf.Max(0f, _heatTransferGrid[x, y] - deltaTime);
                 }
             }
         }
@@ -318,44 +345,6 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                     _heatTransferGrid[x, y] -= dt;
                     _heatTransferGrid[x, y] = Mathf.Max(_heatTransferGrid[x, y], 0f);
                     _heatTransferGrid[x + ix, y + iz] += dt;
-                }
-            }
-        }
-
-        private void FireSourceRadiation(float deltaTime)
-        {
-            // Having only one source per grid cell proves to have nicer results.
-            // Especially wind is positively affected.
-            for (int x = _loopStart; x < ResolutionX + _loopStart; ++x)
-            {
-                for (int y = _loopStart; y < ResolutionY + _loopStart; ++y)
-                {
-                    var t = _fireSourceGrid[x, y];
-
-                    float dy0 = (_fireSourceGrid[x, y - 1] - t) * deltaTime / _deltaZDistance;
-                    float dy1 = (_fireSourceGrid[x, y + 1] - t) * deltaTime / _deltaZDistance;
-                    float dx0 = (_fireSourceGrid[x - 1, y] - t) * deltaTime / _deltaXDistance;
-                    float dx1 = (_fireSourceGrid[x + 1, y] - t) * deltaTime / _deltaXDistance;
-
-                    float dx0y0 = (_fireSourceGrid[x - 1, y - 1] - t) * deltaTime / _deltaDistance;
-                    float dx0y1 = (_fireSourceGrid[x - 1, y + 1] - t) * deltaTime / _deltaDistance;
-                    float dx1y0 = (_fireSourceGrid[x + 1, y - 1] - t) * deltaTime / _deltaDistance;
-                    float dx1y1 = (_fireSourceGrid[x + 1, y + 1] - t) * deltaTime / _deltaDistance;
-
-                    // Let's divide by radius of the cell
-                    _heatTransferGrid[x, y] += t * deltaTime;
-
-                    // When d* is negative, we should add as it means, that [x,y] has higher
-                    // temperature and we should propagate from higher to lower temperature.
-                    _heatTransferGrid[x, y - 1] -= dy0;
-                    _heatTransferGrid[x, y + 1] -= dy1;
-                    _heatTransferGrid[x - 1, y] -= dx0;
-                    _heatTransferGrid[x + 1, y] -= dx1;
-
-                    _heatTransferGrid[x - 1, y - 1] -= dx0y0;
-                    _heatTransferGrid[x - 1, y + 1] -= dx0y1;
-                    _heatTransferGrid[x + 1, y - 1] -= dx1y0;
-                    _heatTransferGrid[x + 1, y + 1] -= dx1y1;
                 }
             }
         }

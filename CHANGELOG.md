@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Documentation
 
+## [0.9.2-pre]
+## Removed
+- Asset files from samples. Samples now only contain scene with setup for given level.
+
 ## [0.9.1-pre]
 ### Added
 - Samples

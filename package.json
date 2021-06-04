@@ -1,8 +1,8 @@
 {
   "name": "janovrom.fire_simulation",
-  "version": "0.9.2-pre",
+  "version": "0.9.3-pre",
   "displayName": "Fire simulation",
-  "description": "Prototype for fire simulation with simple color/temperature rendering.",
+  "description": "This package contains scripts and some starter assets for simplified fire simulation. The simulation is physically inspired (though not correct). It uses heat radiation from fire sources, heat dissipation (to simulate heat rising), and wind simulation. Simplified model is used for trees - cube with differently colored material based on plant's state.",
   "unity": "2020.1",
   "keywords": [
     "fire simulation"

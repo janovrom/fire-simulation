@@ -5,7 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Documentation
+- Code documentation
+- Performance
+
+## [0.9.3-pre]
+### Moved
+- Scene with UI moved to samples to allow editing after import.
+
+### Added
+- Added explanation to readme.
+
+### Removed
+- ChangeText component that was left out when moving to BoolBinding.
 
 ## [0.9.2-pre]
 ## Removed
@@ -13,11 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.1-pre]
 ### Added
-- Samples
-- Binding for running simulation
+- Samples.
+- Binding for running simulation.
 
 ## [0.9.0-pre]
 ### Added
-- Simple event system based on ScriptableObject
-- Feature-wise complete fire simulation
-- Material GPU Instancing used for rendering plants
+- Simple event system based on ScriptableObject.
+- Feature-wise complete fire simulation.
+- Material GPU Instancing used for rendering plants.

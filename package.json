@@ -22,6 +22,11 @@
       "displayName": "Large fire on terrain",
       "description": "Large fire simulation done on unity terrain. Plants are placed in a grid and jittered. Simulation is running in a larger grid. Total amount of plants is 40000.",
       "path": "Samples~/Large fire"
+    },
+    {
+      "displayName": "Simulation controls",
+      "description": "Contains scene with UI controls that are hooked to the simulation using events.",
+      "path": "Samples~/Simulation controls"
     }
   ]
 }

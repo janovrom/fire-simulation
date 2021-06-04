@@ -1,0 +1,15 @@
+{
+    "name": "janovrom.firesimulation.Editor",
+    "references": [
+        "GUID:4abfb7b335e04dd4b98c4371be4a5efb"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

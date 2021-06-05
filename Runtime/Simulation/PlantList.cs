@@ -4,6 +4,16 @@ using System.Collections.Generic;
 
 namespace Janovrom.Firesimulation.Runtime.Simulation
 {
+
+    /// <summary>
+    /// Extend standard generic list and provides manipulation for the plants
+    /// based on their state. The list is partioned into three regions (only by
+    /// indices). These regions don't interleave and valid PlantList will
+    /// contain all burning plants, then all normal plants. and finally all
+    /// burned-down plants. Each of these regions can be empty. To minimize
+    /// copying/allocs, when no plant is added/removed, all state changes are 
+    /// done using reference swapping.
+    /// </summary>
     internal class PlantList : List<Plant>
     {
 
@@ -21,6 +31,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             ActivePlantsCount = Count;
         }
 
+        /// <summary>
+        /// Inserts a plant into the list. First, it's added to the end (this 
+        /// can cause allocation and copy as normal list implementation does)
+        /// and then it's moved to correct partition.
+        /// </summary>
+        /// <param name="plant"></param>
         internal void AddPlant(Plant plant)
         {
             base.Add(plant);
@@ -47,6 +63,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Moves the plant to the end of the list and then removes the last
+        /// item in list. This can cause allocation and copying as normal list
+        /// does.
+        /// </summary>
+        /// <param name="plant"></param>
         internal void RemovePlant(Plant plant)
         {
             int plantIndex = IndexOf(plant);
@@ -71,6 +93,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             RemoveAt(Count - 1);
         }
 
+        /// <summary>
+        /// Sets the plant on specified <paramref name="index"/> on fire. 
+        /// The plant is then moved to the end of the burning region.
+        /// </summary>
+        /// <param name="index"></param>
         internal void LightPlant(int index)
         {
             Plant plant = this[index];
@@ -85,6 +112,13 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Burns down the plant (if on fire) at the specified <paramref name="index"/>.
+        /// There is a bit of shifting involved. First, the burning region is compacted.
+        /// Then the same is done for normal plants, and finally the plant is moved 
+        /// to the end of the normal plant's region.
+        /// </summary>
+        /// <param name="index"></param>
         internal void BurnDownPlant(int index)
         {
             Plant plant = this[index];

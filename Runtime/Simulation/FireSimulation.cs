@@ -7,6 +7,19 @@ using UnityEngine;
 
 namespace Janovrom.Firesimulation.Runtime.Simulation
 {
+
+    /// <summary>
+    /// Physically inspired fire simulation in grid. The grid can be modified
+    /// by resolution on each axis, plant provider and renderer. The provider
+    /// and size of the simulation is handled by aabb. For differently sized
+    /// grids, tweak <see cref="HeatTransferSpeed"/>. The simulation is using
+    /// one-way from source bindings for wind speed and wind direction.
+    /// <br/>
+    /// Fire simulation is simplified by constant fire temperature (1200° Celsius)
+    /// and flashpoint temperature (600° Celsius). Two heat transfer phenomenons
+    /// are used - heat radiation, heat convection. Heat convection is simulaed by
+    /// wind and dissipation (upwards heat movement).
+    /// </summary>
     public class FireSimulation : MonoBehaviour
     {
 
@@ -22,17 +35,20 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
         public Bounds SimulationBounds;
         public BoolBinding IsSimulationRunning;
 
-        private PlantList _plantList;
+        private bool _isSimulationRunning = false;
 
+        // Cached data
+        private PlantList _plantList;
         private float[,] _fireSourceGrid;
         private float[,] _heatTransferGrid;
-
         private float _deltaXDistance, _deltaZDistance, _deltaDistance;
-        private bool _isSimulationRunning = false;
         private Vector3 _min;
 
+        // Fire settings
         private const float _fireTemperature = 1200f;
         private const float _flashpointTemperature = 600f;
+
+        // Paddings for grid - no if checks for boundaries.
         private const int _loopStart = 1;
         private const int _padding = _loopStart * 2;
 
@@ -41,6 +57,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             _isSimulationRunning = value;
         }
 
+        /// <summary>
+        /// Adds a new plant on the <paramref name="position"/> if it's
+        /// in the <see cref="SimulationBounds"/>. The plant is registered
+        /// to the <see cref="Renderer"/> and the indices for a grid are cached.
+        /// </summary>
+        /// <param name="position"></param>
         public void AddPlant(Vector3 position)
         {
             if (_plantList is null)
@@ -56,6 +78,12 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             CacheIndices(plant);
         }
 
+        /// <summary>
+        /// Removes the <paramref name="gameObject"/> if it has <see cref="Plant"/> 
+        /// component and notifies the <see cref="Renderer"/> and destroys the 
+        /// game object afterwards.
+        /// </summary>
+        /// <param name="gameObject"></param>
         public void RemovePlant(GameObject gameObject)
         {
             var plant = gameObject.GetComponentInParent<Plant>();
@@ -67,6 +95,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Lights the <paramref name="gameObject"/> on fire if it has
+        /// <see cref="Plant"/> component and notifies the <see cref="Renderer"/>.
+        /// </summary>
+        /// <param name="gameObject"></param>
         public void LightFire(GameObject gameObject)
         {
             var plant = gameObject.GetComponentInParent<Plant>();
@@ -77,6 +110,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Pauses the simulation (event is invoked and can be listened to
+        /// on <see cref="IsSimulationRunning"/> binding) and clears the 
+        /// renderer and all plants.
+        /// </summary>
         public void ClearPlants()
         {
             IsSimulationRunning.Value = false;
@@ -90,6 +128,11 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             _plantList = null;
         }
 
+        /// <summary>
+        /// Pauses the simulation, removes all old plants and replaces them with
+        /// new ones. One random plant is lit on fire, indices are cached and 
+        /// simulation is started.
+        /// </summary>
         public void GeneratePlants()
         {
             if (PlantGenerator is null)
@@ -115,6 +158,10 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             IsSimulationRunning.Value = true;
         }
 
+        /// <summary>
+        /// Caches some data as fields for faster access and initializes the simulation
+        /// grids.
+        /// </summary>
         private void InitializeGrid()
         {
             _fireSourceGrid = new float[ResolutionX + _padding, ResolutionY + _padding];
@@ -142,6 +189,13 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             plant.IndexY = y;
         }
 
+        /// <summary>
+        /// Runs the simulation if any plants are present and the simulation is not paused.
+        /// First fire is spread using radiation, then wind is applied, and then linear 
+        /// temperature dissipation is used to simulate heat upwards movement and transfer
+        /// of the heat to ground (other objects). After each plant state is updated, the
+        /// plants are rendered (if needed).
+        /// </summary>
         private void Update()
         {
             if (!_isSimulationRunning || _plantList is null)
@@ -176,17 +230,38 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             y = (int)((pos.z - _min.z) / _deltaZDistance) + 1;
         }
 
+        /// <summary>
+        /// Nearest-neighbor access to plant's temperature. The indices
+        /// are cached. It suffers from popping but could be resolved 
+        /// by randomizing burn times, flashpoint temperature.
+        /// </summary>
+        /// <param name="plant"></param>
+        /// <returns></returns>
         private float GetLocalTemperature_NNCached(Plant plant)
         {
             return _heatTransferGrid[plant.IndexX, plant.IndexY];
         }
 
+        /// <summary>
+        /// Nearest-neighbor access to plant's temperature. The indices
+        /// are computed. It suffers from popping but could be resolved 
+        /// by randomizing burn times, flashpoint temperature.
+        /// </summary>
+        /// <param name="plant"></param>
+        /// <returns></returns>
         private float GetLocalTemperature_NN(Plant plant)
         {
             GetIndices(plant, out int x, out int y);
             return _heatTransferGrid[x, y];
         }
 
+        /// <summary>
+        /// Bilinear interpolation based on the plant distance from the centers of cells.
+        /// This slows down the simulation but provides nicer results on edges as nearest 
+        /// neighbor sampling suffers from popping.
+        /// </summary>
+        /// <param name="plant"></param>
+        /// <returns></returns>
         private float GetLocalTemperature(Plant plant)
         {
             Vector3 pos = plant.transform.position;
@@ -215,7 +290,7 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
                 var currentLocalTemperature = GetLocalTemperature_NNCached(plant);
 
                 // Let's say flashpoint temperature is 600°C and let's ignore the heat transfer
-                // from air to the wood.
+                // from air to the wood and heat specific capacity.
                 if (currentLocalTemperature > _flashpointTemperature)
                 {
                     // Light the fire
@@ -242,8 +317,16 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
 
         private void ApplyMask()
         {
+            // TODO here we could mask out parts of the simulation. I.e. only
+            // parts could be lit or inverse.
         }
 
+        /// <summary>
+        /// Update the heat radiation in nearest cells from fire source.
+        /// Using the grid for only applying the radiation once provides
+        /// nicer results.
+        /// </summary>
+        /// <param name="deltaTime"></param>
         private void FireSourceRadiation(float deltaTime)
         {
             // Reset the look up table
@@ -305,6 +388,13 @@ namespace Janovrom.Firesimulation.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Computes wind direction as an (i,j) index offset and moves the heat from
+        /// one cell to other by a value specified by direction of the wind (mostly 
+        /// depends on the Y direction). If the (i,j) is (0,0) then the heat is not 
+        /// propagated but dissipated.
+        /// </summary>
+        /// <param name="deltaTime"></param>
         private void ApplyWind(float deltaTime)
         {
             float windSpeed = WindSpeedNormalized * 100f;

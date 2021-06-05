@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code documentation
 - Performance
 
+## [0.9.4-pre]
+### Fixed
+- Editor assemblies should now be included only in editor
+
 ## [0.9.3-pre]
 ### Moved
 - Scene with UI moved to samples to allow editing after import.

@@ -5,6 +5,10 @@ using UnityEngine;
 namespace Janovrom.Firesimulation.Runtime.PlantGenerators
 {
 
+    /// <summary>
+    /// Generates plants in a grid. The plants are randomly moved from
+    /// the center of each grid cell. The number of cells can be specified.
+    /// </summary>
     public class JitterPlantGenerator : PlantProvider
     {
 
@@ -14,6 +18,14 @@ namespace Janovrom.Firesimulation.Runtime.PlantGenerators
 
         public int Count => ResolutionX * ResolutionZ;
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// The plants are created in a grid with each plant randoml moved from 
+        /// the center of each cell. The resolution is specified by <see cref="ResolutionX"/>
+        /// and <see cref="ResolutionY"/>. The plants are created only if the ray
+        /// from the top to bottom of the min/max hits an object in layer <see cref="CreateOn"/>.
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public override IList<Plant> GetPlants(in Vector3 min, in Vector3 max)
         {
             Clear();
